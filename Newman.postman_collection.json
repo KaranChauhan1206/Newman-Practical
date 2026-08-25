@@ -1,0 +1,547 @@
+{
+  "info": {
+    "_postman_id": "28db8ac3-5ab8-43bb-8cdb-6ae80fb6aba8",
+    "name": "Newman",
+    "description": "## Newman – MCP Conversation Flow Tests\n\nThis collection contains end-to-end scenario tests for an MCP (Model Context Protocol) server running locally at `http://localhost:8765/mcp`. It is designed to validate conversational booking workflows — covering happy paths, ambiguous inputs, and error-handling edge cases.\n\n### Scenarios\n\n**Scenario 1 – Happy Path (Chained, Same Session)**\nA two-step flow that simulates a successful service booking within a single session:\n- **1a – Oil Change Request**: Initiates a booking request for an oil change service.\n- **1b – Confirm Booking (Same Session)**: Confirms the booking captured in the previous step, validating that session state is correctly maintained across chained requests.\n\n**Scenario 2 – Ambiguous Booking**\n- **2 – Vague Request (No Service or Time)**: Submits an underspecified booking request (missing service type and/or time) to verify that the MCP server correctly handles ambiguous or incomplete input.\n\n**Scenario 3 – Cancellation Error (Unknown Confirmation ID)**\n- **3 – Cancel With Captured (Non-Existent) Confirmation ID**: Attempts to cancel a booking using a confirmation ID that does not exist, validating that the server returns an appropriate error response.\n\n### Usage\nAll requests are `POST` to the local MCP endpoint. Run the collection sequentially (e.g. via Newman or the Collection Runner) to exercise the full range of booking conversation flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "11772079"
+  },
+  "item": [
+    {
+      "name": "Scenario 1 - Happy Path (Chained, Same Session)",
+      "item": [
+        {
+          "name": "1a - Oil Change Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json  = pm.response.json();",
+                  "const result = json.result.structuredContent.result;",
+                  "",
+                  "pm.test('status is awaiting_input', () => {",
+                  "    pm.expect(result.status).to.eql('awaiting_input');",
+                  "})",
+                  "",
+                  "pm.test('action is create_appointment', () => {",
+                  "    pm.expect(result.action).to.eql('create_appointment');",
+                  "})",
+                  "",
+                  "pm.test('needed_info is correct', () => {",
+                  "    pm.expect(result.details.needed_info).to.eql([\"timeslot_confirmation\"])",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"I need an oil change at 9am\" }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "1a - Oil Change Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "mcp-session-id",
+                    "value": "{{sessionId}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"I need an oil change at 9am\" }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8765/mcp",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8765",
+                  "path": [
+                    "mcp"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "BaseHTTP/0.6 Python/3.12.6"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 24 Aug 2026 08:36:21 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "405"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"result\": {\n        \"content\": [\n            {\n                \"type\": \"text\",\n                \"text\": \"I'd like to confirm - do you want the Tuesday 9:00 AM slot for your oil change?\"\n            }\n        ],\n        \"structuredContent\": {\n            \"result\": {\n                \"status\": \"awaiting_input\",\n                \"action\": \"create_appointment\",\n                \"message\": \"I'd like to confirm - do you want the Tuesday 9:00 AM slot for your oil change?\",\n                \"details\": {\n                    \"needed_info\": [\n                        \"timeslot_confirmation\"\n                    ]\n                }\n            }\n        }\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "1b - Confirm Booking (Same Session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json  = pm.response.json();",
+                  "const result = json.result.structuredContent.result;",
+                  "",
+                  "pm.test('status is complete', () => {",
+                  "    pm.expect(result.status).to.eql('complete');",
+                  "})",
+                  "",
+                  "pm.test('action is create_appointment', () => {",
+                  "    pm.expect(result.action).to.eql('create_appointment');",
+                  "})",
+                  "",
+                  "pm.test('confirmation_id present in details', () => {",
+                  "    pm.expect(result.details).to.have.property('confirmation_id');",
+                  "})",
+                  "",
+                  "pm.test('message contains Confirmation', () => {",
+                  "    pm.expect(result.message).to.include('Confirmation');",
+                  "})",
+                  "",
+                  "// Capture confirmation_id — reused in Scenario 3 to drive the cancel request\",",
+                  "pm.collectionVariables.set('lastConfirmationId', result.details.confirmation_id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"Yes, please book for Tuesday at 9:00 AM\" }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "1b - Confirm Booking (Same Session)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "mcp-session-id",
+                    "value": "{{sessionId}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"Yes, please confirm\" }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8765/mcp",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8765",
+                  "path": [
+                    "mcp"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "BaseHTTP/0.6 Python/3.12.6"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 24 Aug 2026 08:36:35 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "395"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"result\": {\n        \"content\": [\n            {\n                \"type\": \"text\",\n                \"text\": \"You're booked for Tuesday at 9:00 AM. Confirmation: CNF-2001.\"\n            }\n        ],\n        \"structuredContent\": {\n            \"result\": {\n                \"status\": \"complete\",\n                \"action\": \"create_appointment\",\n                \"message\": \"You're booked for Tuesday at 9:00 AM. Confirmation: CNF-2001.\",\n                \"details\": {\n                    \"confirmation_id\": \"CNF-2001\",\n                    \"selected_datetime\": \"Tuesday at 9:00 AM\"\n                }\n            }\n        }\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario 2 - Ambiguous Booking",
+      "item": [
+        {
+          "name": "2 - Vague Request (No Service or Time)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{ambiguousSessionId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"I need to book an appointment\" }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "2 - Vague Request (No Service or Time)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "mcp-session-id",
+                    "value": "{{ambiguousSessionId}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"I need to book an appointment\" }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8765/mcp",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8765",
+                  "path": [
+                    "mcp"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "BaseHTTP/0.6 Python/3.12.6"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 24 Aug 2026 08:37:17 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "389"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"result\": {\n        \"content\": [\n            {\n                \"type\": \"text\",\n                \"text\": \"I can help with that - which vehicle and what service do you need?\"\n            }\n        ],\n        \"structuredContent\": {\n            \"result\": {\n                \"status\": \"awaiting_input\",\n                \"action\": \"create_appointment\",\n                \"message\": \"I can help with that - which vehicle and what service do you need?\",\n                \"details\": {\n                    \"needed_info\": [\n                        \"vehicle_confirmation\",\n                        \"service\"\n                    ]\n                }\n            }\n        }\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario 3 - Cancellation Error (Unknown Confirmation ID)",
+      "item": [
+        {
+          "name": "3 - Cancel With Captured (Non-Existent) Confirmation ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json  = pm.response.json();",
+                  "const result = json.result.structuredContent.result;",
+                  "",
+                  "pm.test('status is error', () => {",
+                  "    pm.expect(result.status).to.eql('error');",
+                  "})",
+                  "",
+                  "pm.test('action is cancel_appointment', () => {",
+                  "    pm.expect(result.action).to.eql('cancel_appointment');",
+                  "})",
+                  "",
+                  "pm.test('error message says no appointment found', () => {",
+                  "    pm.expect(result.message).to.include(\"No appointment found\");",
+                  "})",
+                  "",
+                  "pm.test('details echo back the attempted confirmation_id', () => {",
+                  "    pm.expect(result.details).to.have.property('confirmation_id');",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "cancel-session-002",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"Please cancel my appointment {{lastConfirmationId}}\" }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "3 - Cancel With Captured (Non-Existent) Confirmation ID",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "mcp-session-id",
+                    "value": "cancel-session-001",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"schedule_agent\",\n    \"arguments\": { \"user_request\": \"Please cancel my appointment {{lastConfirmationId}}\" }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8765/mcp",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8765",
+                  "path": [
+                    "mcp"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "BaseHTTP/0.6 Python/3.12.6"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 24 Aug 2026 08:39:22 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "355"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"result\": {\n        \"content\": [\n            {\n                \"type\": \"text\",\n                \"text\": \"No appointment found matching the confirmation number you provided.\"\n            }\n        ],\n        \"structuredContent\": {\n            \"result\": {\n                \"status\": \"error\",\n                \"action\": \"cancel_appointment\",\n                \"message\": \"No appointment found matching the confirmation number you provided.\",\n                \"details\": {\n                    \"confirmation_id\": null\n                }\n            }\n        }\n    }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "lastConfirmationId",
+      "value": ""
+    }
+  ]
+}
