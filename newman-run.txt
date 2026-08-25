@@ -1,6 +1,6 @@
 newman
 
-Schedule Agent MCP - Newman Practical
+Newman
 
 ❏ Scenario 1 - Happy Path (Chained, Same Session)
 ↳ 1a - Oil Change Request
