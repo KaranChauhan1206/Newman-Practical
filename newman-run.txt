@@ -4,11 +4,11 @@ Newman
 
 ❏ Scenario 1 - Happy Path (Chained, Same Session)
 ↳ 1a - Oil Change Request
-  POST http://localhost:8765/mcp [200 OK, 550B, 20ms]
+  POST http://localhost:8765/mcp [200 OK, 550B, 19ms]
   ✓  HTTP 200
   ✓  status is awaiting_input
   ✓  action is create_appointment
-  ✓  agent asks to confirm timeslot
+  ✓  needed_info is correct
 
 ↳ 1b - Confirm Booking (Same Session)
   POST http://localhost:8765/mcp [200 OK, 540B, 3ms]
@@ -21,13 +21,10 @@ Newman
 ❏ Scenario 2 - Ambiguous Booking
 ↳ 2 - Vague Request (No Service or Time)
   POST http://localhost:8765/mcp [200 OK, 534B, 2ms]
-  ✓  HTTP 200
-  ✓  status is awaiting_input
-  ✓  agent requests vehicle and service clarification
 
 ❏ Scenario 3 - Cancellation Error (Unknown Confirmation ID)
 ↳ 3 - Cancel With Captured (Non-Existent) Confirmation ID
-  POST http://localhost:8765/mcp [200 OK, 450B, 3ms]
+  POST http://localhost:8765/mcp [200 OK, 500B, 2ms]
   ✓  HTTP 200
   ✓  status is error
   ✓  action is cancel_appointment
@@ -41,15 +38,15 @@ Newman
 ├─────────────────────────┼─────────────────┼─────────────────┤
 │                requests │               4 │               0 │
 ├─────────────────────────┼─────────────────┼─────────────────┤
-│            test-scripts │               4 │               0 │
+│            test-scripts │               7 │               0 │
 ├─────────────────────────┼─────────────────┼─────────────────┤
-│      prerequest-scripts │               2 │               0 │
+│      prerequest-scripts │               4 │               0 │
 ├─────────────────────────┼─────────────────┼─────────────────┤
-│              assertions │              17 │               0 │
+│              assertions │              14 │               0 │
 ├─────────────────────────┴─────────────────┴─────────────────┤
-│ total run duration: 94ms                                    │
+│ total run duration: 100ms                                   │
 ├─────────────────────────────────────────────────────────────┤
-│ total data received: 1.49kB (approx)                        │
+│ total data received: 1.54kB (approx)                        │
 ├─────────────────────────────────────────────────────────────┤
-│ average response time: 7ms [min: 2ms, max: 20ms, s.d.: 7ms] │
+│ average response time: 6ms [min: 2ms, max: 19ms, s.d.: 7ms] │
 └─────────────────────────────────────────────────────────────┘
