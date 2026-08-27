@@ -17,6 +17,7 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "",
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                   "",
                   "const json  = pm.response.json();",
@@ -33,6 +34,19 @@
                   "pm.test('needed_info is correct', () => {",
                   "    pm.expect(result.details.needed_info).to.eql([\"timeslot_confirmation\"])",
                   "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate a unique session ID and persist it so request 1b reuses it",
+                  "const sessionId = 'session-' + Math.random().toString(36).substring(2, 10);",
+                  "      pm.collectionVariables.set('sessionId', sessionId)"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -278,6 +292,34 @@
       "item": [
         {
           "name": "2 - Vague Request (No Service or Time)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json  = pm.response.json();",
+                  "const result = json.result.structuredContent.result;",
+                  "",
+                  "pm.test('status is awaiting_input', () => {",
+                  "    pm.expect(result.status).to.eql('awaiting_input');",
+                  "})",
+                  "",
+                  "pm.test('action is create_appointment', () => {",
+                  "    pm.expect(result.action).to.eql('create_appointment');",
+                  "})",
+                  "",
+                  "pm.test('needed_info is correct', () => {",
+                  "    pm.expect(result.details.needed_info).to.eql([\"vehicle_confirmation\",\"service\"])",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -541,6 +583,10 @@
   "variable": [
     {
       "key": "lastConfirmationId",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
       "value": ""
     }
   ]
